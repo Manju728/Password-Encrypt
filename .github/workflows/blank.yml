@@ -1,0 +1,89 @@
+name: Password Encryption
+
+on:
+  workflow_dispatch:
+    inputs:
+      Environment:
+        type: choice
+        required: true
+        options:
+          - Integration
+          - Production
+      user:
+        type: choice
+        required: true
+        options:
+          - QQDASI3
+          - QQDASI0
+          - QQDASI4
+          - QQDASI5
+          - QQDBEH2
+          - QQDBSC1
+          - QQDCKL1
+          - QQDOMCONDBPC
+          - QQDOMCONDBIC
+      encryptionMethod:
+        type: choice
+        required: true
+        options:
+          - AES
+          - RSA
+
+jobs:
+  encrypt_password:
+    runs-on: ubuntu-latest
+    steps:
+      # Step to generate a random password
+      - name: Generate Random Password
+        id: generate_password
+        run: |
+          RANDOM_PASSWORD=$(openssl rand -base64 12)  # Generates a random password
+          echo "Random password: $RANDOM_PASSWORD"
+          echo "::set-output name=password::$RANDOM_PASSWORD"
+
+      # Step to encrypt the password based on selected encryption method
+      - name: Encrypt Password
+        id: encrypt_password
+        run: |
+          if [[ "${{ inputs.encryptionMethod }}" == "AES" ]]; then
+            ENCRYPTED_PASSWORD=$(echo "${{ steps.generate_password.outputs.password }}" | openssl enc -aes-256-cbc -a -salt -pass pass:somepassword)
+            echo "Password encrypted with AES: $ENCRYPTED_PASSWORD"
+          elif [[ "${{ inputs.encryptionMethod }}" == "RSA" ]]; then
+            # Generate a temporary RSA key for demonstration
+            openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+            openssl rsa -pubout -in private.pem -out public.pem
+          
+            # Encrypt the password with RSA
+            echo "${{ steps.generate_password.outputs.password }}" | openssl rsautl -encrypt -pubin -inkey public.pem | base64 > encrypted_password.txt
+            ENCRYPTED_PASSWORD=$(cat encrypted_password.txt)
+            echo "Password encrypted with RSA: $ENCRYPTED_PASSWORD"
+          fi
+          echo "::set-output name=encrypted_password::$ENCRYPTED_PASSWORD"
+
+      # Step to update the XML file with the encrypted password
+      # Step to update the XML file with the encrypted password
+      - name: Update XML File
+        run: |
+          USER="${{ inputs.user }}"
+          ENVIRONMENT="${{ inputs.Environment }}"
+          ENCRYPTED_PASSWORD="${{ steps.encrypt_password.outputs.encrypted_password }}"
+
+          if [[ "$ENVIRONMENT" == "Integration" ]]; then
+            # Replace the placeholder for the selected user in the Integration environment
+            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" config.xml
+          elif [[ "$ENVIRONMENT" == "Production" ]]; then
+            # Replace the placeholder for the selected user in the Production environment
+            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" config.xml
+          fi
+
+          echo "Updated the XML file with the encrypted password for user $USER in $ENVIRONMENT environment."
+
+
+      # Commit the changes to the XML file
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add config.xml
+          git commit -m "Update password for user ${{ inputs.user }} in ${{ inputs.Environment }} environment."
+          git push
