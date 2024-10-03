@@ -70,10 +70,10 @@ jobs:
 
           if [[ "$ENVIRONMENT" == "Integration" ]]; then
             # Replace the placeholder for the selected user in the Integration environment
-            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" config.xml
+            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" password.xml
           elif [[ "$ENVIRONMENT" == "Production" ]]; then
             # Replace the placeholder for the selected user in the Production environment
-            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" config.xml
+            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" password.xml
           fi
 
           echo "Updated the XML file with the encrypted password for user $USER in $ENVIRONMENT environment."
