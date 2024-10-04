@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       # Step to generate a random password
       - name: Generate Random Password
         id: generate_password
@@ -67,15 +67,17 @@ jobs:
       - name: Update XML File
         run: |
           USER="${{ inputs.user }}"
+          pwd
+          ls
           ENVIRONMENT="${{ inputs.Environment }}"
           ENCRYPTED_PASSWORD="${{ steps.encrypt_password.outputs.encrypted_password }}"
 
           if [[ "$ENVIRONMENT" == "Integration" ]]; then
             # Replace the placeholder for the selected user in the Integration environment
-            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" ../password.xml
+            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" password.xml
           elif [[ "$ENVIRONMENT" == "Production" ]]; then
             # Replace the placeholder for the selected user in the Production environment
-            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" ../password.xml
+            sed -i "s|<password>PLACEHOLDER_PASSWORD_${USER}</password>|<password>${ENCRYPTED_PASSWORD}</password>|g" password.xml
           fi
           echo "Updated the XML file with the encrypted password for user $USER in $ENVIRONMENT environment."
 
@@ -84,6 +86,6 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add ../password.xml
+          git add password.xml
           git commit -m "Update password for user ${{ inputs.user }} in ${{ inputs.Environment }} environment."
           git push
