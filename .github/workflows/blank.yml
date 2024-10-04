@@ -33,6 +33,8 @@ jobs:
   encrypt_password:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
       # Step to generate a random password
       - name: Generate Random Password
         id: generate_password
