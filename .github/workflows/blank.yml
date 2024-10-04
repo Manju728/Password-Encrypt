@@ -83,9 +83,12 @@ jobs:
 
       # Commit the changes to the XML file
       - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add password.xml
+          git add $GITHUB_WORKSPACE/password.xml  # Add the updated file
           git commit -m "Update password for user ${{ inputs.user }} in ${{ inputs.Environment }} environment."
-          git push
+          git push https://${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+
