@@ -22,9 +22,12 @@ inputs:
     required: true
     default: "22"
 
-runs:
+jobs:
   using: "composite"
+  runs-on: ubuntu-latest
   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
     - name: Starting all servers and nodes on ${{ inputs.cluster }} - ${{ inputs.environment }} Cluster
       if: ${{ inputs.environment == 'tmp' || inputs.environment == 'Prod' }}
       shell: bash
