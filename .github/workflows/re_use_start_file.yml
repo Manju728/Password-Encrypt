@@ -21,7 +21,6 @@ on:
       application_server_ssh_port:
         description: "Server Port"
         required: true
-      default: "22"
 
 jobs:
   Connect_to_servers:
