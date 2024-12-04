@@ -1,66 +1,63 @@
 name: Reusable Deployment workflow To Start All Servers and Nodes
-description: Start All Servers and Nodes
 
-inputs:
-  credentialId:
-    description: "Passing the QQ-User to login"
-    required: true
-  servers:
-    description: "A JSON-formatted list of servers, each containing hostname, username, private key, and nodes."
-    required: true
-  homeDir:
-    description: "Home Directory of the App/Web"
-    required: true
-  cluster:
-    description: "Name of the cluster"
-    required: true
-  environment:
-    description: "Input should be tmp for int and Prod for prod"
-    required: true
-  application_server_ssh_port:
-    description: "Server Port"
-    required: true
-    default: "22"
+on:
+  workflow_dispatch:
+    inputs:
+      credentialId:
+        description: "Passing the QQ-User to login"
+        required: true
+      servers:
+        description: "A JSON-formatted list of servers, each containing hostname, username, private key, and nodes."
+        required: true
+      homeDir:
+        description: "Home Directory of the App/Web"
+        required: true
+      cluster:
+        description: "Name of the cluster"
+        required: true
+      environment:
+        description: "Input should be tmp for int and Prod for prod"
+        required: true
+      application_server_ssh_port:
+        description: "Server Port"
+        required: true
+      default: "22"
 
 jobs:
-  using: "composite"
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Starting all servers and nodes on ${{ inputs.cluster }} - ${{ inputs.environment }} Cluster
-      if: ${{ inputs.environment == 'tmp' || inputs.environment == 'Prod' }}
-      shell: bash
-
-      run: |
-        # Function to start all nodes for a given server with specific credentials
-        start_nodes () {
-          SERVER=$1
-          USERNAME=$2
-          PRIVATE_KEY=$3
-          NODE_LIST=$4
-          IFS=',' read -r -a NODES <<< "$NODE_LIST"
-          for NODE in "${NODES[@]}"
-          do
-            echo "####################### Starting app on $SERVER node $NODE #######################"
-            ssh -o StrictHostKeyChecking=no -i $PRIVATE_KEY -p ${{ inputs.application_server_ssh_port }} $USERNAME@$SERVER "cd ${{ inputs.homeDir }}; ./GFserver5 start --node $NODE"
-            sleep 2
-          done
-        }
-
-        # Parse the servers input (JSON format) into an array
-        SERVERS_JSON="${{ inputs.servers }}"
-        for SERVER_INFO in $(echo $SERVERS_JSON | jq -r '.[] | @base64'); do
-          _jq() {
-            echo ${SERVER_INFO} | base64 --decode | jq -r ${1}
+  Connect_to_servers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Starting all servers and nodes on ${{ inputs.cluster }} - ${{ inputs.environment }} Cluster
+        if: ${{ inputs.environment == 'tmp' || inputs.environment == 'Prod' }}
+        shell: bash
+        run: |
+          start_nodes () {
+            SERVER=$1
+            USERNAME=$2
+            PRIVATE_KEY=$3
+            NODE_LIST=$4
+            IFS=',' read -r -a NODES <<< "$NODE_LIST"
+            for NODE in "${NODES[@]}"
+            do
+              echo "####################### Starting app on $SERVER node $NODE #######################"
+              ssh -o StrictHostKeyChecking=no -i $PRIVATE_KEY -p ${{ inputs.application_server_ssh_port }} $USERNAME@$SERVER "cd ${{ inputs.homeDir }}; ./GFserver5 start --node $NODE"
+              sleep 2
+            done
           }
+          SERVERS_JSON="${{ inputs.servers }}"
+          for SERVER_INFO in $(echo $SERVERS_JSON | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${SERVER_INFO} | base64 --decode | jq -r ${1}
+            }
 
           # Extract server information from JSON
-          SERVER_HOST=$(_jq '.host')
-          SERVER_USERNAME=$(_jq '.username')
-          SERVER_PRIVATE_KEY=$(_jq '.privateKey')
-          SERVER_NODES=$(_jq '.nodes')
+            SERVER_HOST=$(_jq '.host')
+            SERVER_USERNAME=$(_jq '.username')
+            SERVER_PRIVATE_KEY=$(_jq '.privateKey')
+            SERVER_NODES=$(_jq '.nodes')
 
           # Start nodes for each server
-          start_nodes "$SERVER_HOST" "$SERVER_USERNAME" "$SERVER_PRIVATE_KEY" "$SERVER_NODES"
-        done
+            start_nodes "$SERVER_HOST" "$SERVER_USERNAME" "$SERVER_PRIVATE_KEY" "$SERVER_NODES"
+          done
