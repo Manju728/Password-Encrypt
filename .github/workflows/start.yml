@@ -1,0 +1,12 @@
+jobs:
+  deploy:
+    uses: ./path/to/re_use_start_file.yml
+    with:
+      credentialId: "default-user"
+      servers: '[{"host": "server1.example.com", "username": "user1", "privateKey": "/path/to/server1/private/key", "nodes": "node1,node2,node3"},
+                 {"host": "server2.example.com", "username": "user2", "privateKey": "/path/to/server2/private/key", "nodes": "node4,node5"},
+                 {"host": "server3.example.com", "username": "user3", "privateKey": "/path/to/server3/private/key", "nodes": "node6"}]'
+      homeDir: "/path/to/app"
+      cluster: "my-cluster"
+      environment: "tmp"  # or "Prod"
+      application_server_ssh_port: "22"
